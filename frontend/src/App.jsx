@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Moon, Sun, Sparkles, User, Settings, LifeBuoy, LogOut } from 'lucide-react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import useAuth from './hooks/useAuth';
 
 export default function App() {
@@ -8,7 +8,15 @@ export default function App() {
     const [isDarkMode, setIsDarkMode] = useState(false);
 
     const { user } = useAuth();
-    const LOGOUT_URL = 'http://localhost:3000/auth/logout';
+
+    const handleLogout = () => {
+        localStorage.removeItem('jwtToken');
+        // Redirect to home page
+        window.location.href = '/';
+    };
+
+    const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
 
     // Check for system preference on mount
     useEffect(() => {
@@ -131,7 +139,8 @@ export default function App() {
                                         </a>
                                         <div className={`border-t ${theme.border} my-1`}></div>
                                         <a
-                                            href={LOGOUT_URL}
+                                            onClick={handleLogout} // <-- ADD
+                                            style={{ cursor: 'pointer' }} // <-- Make it look clickable
                                             className={`flex items-center space-x-2 px-4 py-2 text-sm ${theme.text} ${theme.dropdownHoverBg}`}
                                         >
                                             <LogOut className="w-4 h-4" />

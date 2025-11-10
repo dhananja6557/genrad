@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const PROFILE_API_URL = 'http://localhost:3000/user/profile';
+const PROFILE_API_URL = 'https://ai.esolution.lk:2508/user/profile';
 
 const useAuth = () => {
     const [user, setUser] = useState(null);
@@ -10,17 +10,28 @@ const useAuth = () => {
 
     useEffect(() => {
         const fetchUser = async () => {
+            // Get token from storage
+            const token = localStorage.getItem('jwtToken');
+
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+
             try {
-                // CRITICAL: Tells Axios to send the session cookie from the browser
                 const response = await axios.get(PROFILE_API_URL, {
-                    withCredentials: true,
+                    // --- SEND THE TOKEN ---
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    // withCredentials: true, // <-- REMOVE THIS
                 });
 
-                // If the backend returns 200, we're logged in
                 setUser(response.data.user);
             } catch (error) {
-                // If backend returns 401, we set user to null
+                // If token is invalid, 401 error will be caught here
                 setUser(null);
+                localStorage.removeItem('jwtToken'); // Clean up invalid token
             } finally {
                 setLoading(false);
             }

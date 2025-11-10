@@ -2,16 +2,12 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+const passport = require('passport'); // <-- Import passport
 
-// Middleware to ensure user is logged in
-const ensureAuthenticated = (req, res, next) => {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    // If not authenticated, send a 401 response (for the frontend hook)
-    res.status(401).json({ message: 'Unauthorized' });
-};
+// This is our new "ensureAuthenticated"
+const authenticateJwt = passport.authenticate('jwt', { session: false });
 
-router.get('/profile', ensureAuthenticated, userController.getProfile);
+// Apply the middleware to the profile route
+router.get('/profile', authenticateJwt, userController.getProfile);
 
 module.exports = router;

@@ -1,3 +1,4 @@
+// GeneratorPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -29,7 +30,7 @@ const projectTypes = {
 };
 
 // Backend API URL
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'https://ai.esolution.lk:2508';
 
 export default function GeneratorPage() {
     // ------------------------------------------------------------------
