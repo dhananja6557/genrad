@@ -1,12 +1,14 @@
+// src/main.jsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App.jsx';
 import './index.css';
 
-// Import the new pages
+// Import the pages
 import HomePage from './HomePage.jsx';
 import GeneratorPage from './GeneratorPage.jsx';
+import ProjectHistoryPage from './ProjectHistoryPage.jsx'; // NEW
 import LoginScreen from './components/LoginScreen.jsx';
 import AuthCallback from './AuthCallback.jsx';
 
@@ -14,18 +16,22 @@ import AuthCallback from './AuthCallback.jsx';
 const router = createBrowserRouter([
     {
         path: "/",
-        element: <App />, // App is the main layout
+        element: <App />,
         children: [
             {
-                index: true, // This is the default route
+                index: true,
                 element: <HomePage />
             },
             {
-                path: "generator", // The generator page
+                path: "generator",
                 element: <GeneratorPage />
             },
             {
-                path: "signin", // The login page
+                path: "history", // NEW
+                element: <ProjectHistoryPage />
+            },
+            {
+                path: "signin",
                 element: <LoginScreen />
             },
             { 
@@ -38,7 +44,6 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-        {/* This <RouterProvider> is what fixes the error */}
         <RouterProvider router={router} />
     </React.StrictMode>,
 )

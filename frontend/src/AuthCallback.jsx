@@ -1,3 +1,4 @@
+// src/AuthCallback.jsx
 import React, { useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 

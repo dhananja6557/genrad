@@ -1,6 +1,349 @@
+// src/main.jsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import App from './App.jsx';
+import './index.css';
+
+// Import the new pages
+import HomePage from './HomePage.jsx';
+import GeneratorPage from './GeneratorPage.jsx';
+import LoginScreen from './components/LoginScreen.jsx';
+import AuthCallback from './AuthCallback.jsx';
+
+// Set up React Router
+const router = createBrowserRouter([
+    {
+        path: "/",
+        element: <App />, // App is the main layout
+        children: [
+            {
+                index: true, // This is the default route
+                element: <HomePage />
+            },
+            {
+                path: "generator", // The generator page
+                element: <GeneratorPage />
+            },
+            {
+                path: "signin", // The login page
+                element: <LoginScreen />
+            },
+            { 
+                path: "auth/callback", 
+                element: <AuthCallback /> 
+            }
+        ]
+    }
+]);
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+        {/* This <RouterProvider> is what fixes the error */}
+        <RouterProvider router={router} />
+    </React.StrictMode>,
+)
+
+// src/App.jsx
+import React, { useState, useEffect, useRef } from 'react';
+import { Moon, Sun, Sparkles, User, Settings, LifeBuoy, LogOut } from 'lucide-react';
+import { Outlet, Link, useSearchParams, useNavigate } from 'react-router-dom';
+import useAuth from './hooks/useAuth';
+
+export default function App() {
+    // Theme state
+    const [isDarkMode, setIsDarkMode] = useState(false);
+
+    const { user } = useAuth();
+
+    const handleLogout = () => {
+        localStorage.removeItem('jwtToken');
+        // Redirect to home page
+        window.location.href = '/';
+    };
+
+    const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
+
+    // Check for system preference on mount
+    useEffect(() => {
+        const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const updateTheme = (matches) => {
+            setIsDarkMode(matches);
+            if (matches) {
+                document.body.classList.add('dark');
+            } else {
+                document.body.classList.remove('dark');
+            }
+        };
+        updateTheme(darkModeMediaQuery.matches);
+
+        const handler = (e) => updateTheme(e.matches);
+        darkModeMediaQuery.addEventListener('change', handler);
+        return () => darkModeMediaQuery.removeEventListener('change', handler);
+    }, []);
+
+    const toggleTheme = () => {
+        setIsDarkMode(prev => {
+            const newIsDark = !prev;
+            if (newIsDark) {
+                document.body.classList.add('dark');
+            } else {
+                document.body.classList.remove('dark');
+            }
+            return newIsDark;
+        });
+    };
+
+    // State to manage the dropdown menu visibility
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    // Ref to detect clicks outside the menu
+    const menuRef = useRef(null);
+
+    // Effect to handle clicks outside the dropdown menu
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setIsMenuOpen(false);
+            }
+        }
+        // Bind the event listener
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            // Unbind the event listener on clean-up
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [menuRef]);
+
+    // Theme classes
+    const theme = {
+        bg: isDarkMode ? 'bg-black' : 'bg-gray-50',
+        text: isDarkMode ? 'text-white' : 'text-black',
+        textMuted: isDarkMode ? 'text-gray-400' : 'text-gray-600',
+        border: isDarkMode ? 'border-gray-800' : 'border-gray-200',
+        cardBg: isDarkMode ? 'bg-gray-900' : 'bg-white',
+        cardBorder: isDarkMode ? 'border-gray-800' : 'border-gray-100',
+        inputBg: isDarkMode ? 'bg-gray-900' : 'bg-white',
+        inputBorder: isDarkMode ? 'border-gray-700' : 'border-gray-200',
+        hoverBg: isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100',
+        accent: 'bg-red-600',
+        accentHover: 'hover:bg-red-700',
+        accentText: 'text-red-600',
+        accentBg: isDarkMode ? 'bg-red-900/20' : 'bg-red-50',
+        accentBorder: isDarkMode ? 'border-red-800' : 'border-red-200',
+    };
+
+    // --- NEW: Top Navigation Bar Component ---
+    const TopNav = () => (
+        <nav className={`sticky top-0 z-50 w-full ${isDarkMode ? 'bg-black/80' : 'bg-white/80'} backdrop-blur-md border-b ${theme.border}`}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between items-center h-16">
+                    {/* Left side: Logo and Nav Links */}
+                    <div className="flex items-center space-x-8">
+                        <Link to="/" className="flex-shrink-0 flex items-center space-x-2">
+                            <Sparkles className={`w-7 h-7 ${theme.accentText}`} />
+                            <span className={`font-bold text-xl ${theme.text}`}>GenRAD</span>
+                        </Link>
+                        <div className="hidden sm:flex sm:space-x-6">
+                            {['Products', 'Build', 'Research', 'Responsibility'].map((item) => (
+                                <a key={item} href="#" className={`text-sm font-medium ${theme.textMuted} hover:${isDarkMode ? 'text-white' : 'text-black'}`}>
+                                    {item}
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Right side: Try Button and Theme Toggle */}
+                    <div className="flex items-center space-x-4">
+                        {user ? (
+                            <div className="relative" ref={menuRef}>
+                                <button
+                                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                    className={`hidden sm:flex items-center justify-center w-9 h-9 ${theme.text} ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} rounded-full ${theme.hoverBg}`}
+                                    title="User Profile"
+                                    aria-haspopup="true"
+                                    aria-expanded={isMenuOpen}
+                                >
+                                    <User className="w-5 h-5" />
+                                </button>
+
+                                {/* Dropdown Menu */}
+                                {isMenuOpen && (
+                                    <div className={`absolute right-0 top-full mt-2 w-48 ${theme.dropdownBg} border ${theme.border} rounded-md shadow-lg py-1 z-50`}>
+                                        <a
+                                            href="#"
+                                            className={`flex items-center space-x-2 px-4 py-2 text-sm ${theme.text} ${theme.dropdownHoverBg}`}
+                                        >
+                                            <Settings className="w-4 h-4" />
+                                            <span>Settings</span>
+                                        </a>
+                                        <a
+                                            href="#"
+                                            className={`flex items-center space-x-2 px-4 py-2 text-sm ${theme.text} ${theme.dropdownHoverBg}`}
+                                        >
+                                            <LifeBuoy className="w-4 h-4" />
+                                            <span>Support</span>
+                                        </a>
+                                        <div className={`border-t ${theme.border} my-1`}></div>
+                                        <a
+                                            onClick={handleLogout} // <-- ADD
+                                            style={{ cursor: 'pointer' }} // <-- Make it look clickable
+                                            className={`flex items-center space-x-2 px-4 py-2 text-sm ${theme.text} ${theme.dropdownHoverBg}`}
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            <span>Log out</span>
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Link
+                                to="/generator"
+                                className={`hidden sm:flex items-center space-x-1.5 text-sm font-medium ${theme.text} ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} px-3 py-1.5 rounded-full ${theme.hoverBg}`}
+                            >
+                                <span className={`${theme.accentText} text-lg`}>+</span>
+                                <span>Try GenRAD</span>
+                            </Link>
+                        )}
+
+                        <button
+                            onClick={toggleTheme}
+                            className={`p-2 rounded-full ${theme.hoverBg} ${theme.textMuted}`}
+                            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                        >
+                            {isDarkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-700" />}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    );
+    // --- END NEW ---
+
+    return (
+        <div className={`${isDarkMode ? 'dark' : ''} ${theme.bg}`}>
+            <TopNav />
+            <main className="min-h-screen max-w-7xl mx-auto p-6">
+                <Outlet context={{ theme, isDarkMode }} />
+            </main>
+        </div>
+    );
+}
+
+// src/HomePage.jsx
+import React from 'react';
+import { Link, useOutletContext } from 'react-router-dom';
+import {
+    Sparkles,
+    Package,
+    FolderTree,
+    FileDown,
+    Search,
+    Code2,
+    Smartphone,
+    Monitor,
+    ArrowRight
+} from 'lucide-react';
+
+/**
+ * --- NEW FILE ---
+ * This is the new landing page, styled to match the image.
+ */
+export default function HomePage() {
+    const { theme, isDarkMode } = useOutletContext(); // Get theme from layout
+
+    // Mock data for feature cards, like in the image
+    const features = [
+        {
+            title: 'Generate React Native Apps',
+            description: 'Create complete, runnable React Native projects for iOS and Android from a single prompt.',
+            icon: Smartphone,
+            linkText: 'Try Mobile',
+            date: 'OCT 2025'
+        },
+        {
+            title: 'Generate React + Vite Apps',
+            description: 'Instantly scaffold a modern web app with React, Vite, and Tailwind CSS, routing included.',
+            icon: Monitor,
+            linkText: 'Try Web',
+            date: 'OCT 2025'
+        },
+        {
+            title: 'Full Project Structure',
+            description: 'GenRAD doesn\'t just write snippets. It builds the entire project folder structure for you.',
+            icon: FolderTree,
+            linkText: 'Learn more',
+            date: 'SEP 2025'
+        }
+    ];
+
+    return (
+        <div className="flex flex-col items-center text-center p-4">
+            {/* 1. "Get started" Section */}
+            <h1 className={`text-4xl md:text-5xl font-semibold ${theme.text} mt-12 mb-6`}>
+                Get started
+            </h1>
+
+            {/* Button Grid - styled like the image */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-center gap-3 w-full max-w-2xl">
+                <button disabled className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 ${theme.inputBorder} ${theme.inputBg} ${theme.textMuted} opacity-50 cursor-not-allowed`}>
+                    <Search className="w-5 h-5" />
+                    <span>Search with AI</span>
+                </button>
+                <button disabled className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 ${theme.inputBorder} ${theme.inputBg} ${theme.textMuted} opacity-50 cursor-not-allowed`}>
+                    <Code2 className="w-5 h-5" />
+                    <span>Ask GenRAD</span>
+                </button>
+                {/* The main "Call to Action" button is now a Link */}
+                <Link
+                    to="/generator"
+                    className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all ${theme.accentBorder} ${theme.accentBg} ${theme.accentText} font-semibold hover:opacity-80`}
+                >
+                    <Sparkles className="w-5 h-5" />
+                    <span>Create an App</span>
+                    <ArrowRight className="w-5 h-5" />
+                </Link>
+            </div>
+
+            {/* 2. Feature Cards Section */}
+            <div className="w-full max-w-5xl mt-24 text-left">
+                {features.map((feature, index) => {
+                    const Icon = feature.icon;
+                    return (
+                        <div key={index} className={`grid md:grid-cols-3 gap-8 items-center mb-16 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''}`}>
+                            {/* Text Content */}
+                            <div className={`md:col-span-2 ${index % 2 === 1 ? 'md:order-1' : ''}`}>
+                                <h2 className={`text-3xl font-semibold ${theme.text} mb-4`}>
+                                    {feature.title}
+                                </h2>
+                                <p className={`${theme.textMuted} text-lg mb-6`}>
+                                    {feature.description}
+                                </p>
+                                <div className="flex items-center space-x-4">
+                                    <span className={`text-xs font-medium ${theme.textMuted}`}>{feature.date}</span>
+                                    <Link
+                                        to="/generator"
+                                        className={`text-sm font-medium ${theme.accentText} hover:underline`}
+                                    >
+                                        {feature.linkText}
+                                    </Link>
+                                </div>
+                            </div>
+                            {/* Icon / "Image" Placeholder */}
+                            <div className={`flex items-center justify-center ${theme.cardBg} rounded-2xl border ${theme.cardBorder} h-64 p-8 ${index % 2 === 1 ? 'md:order-2' : ''}`}>
+                                <Icon className={`w-32 h-32 ${theme.accentText} opacity-50`} />
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
 // src/GeneratorPage.jsx
 import React, { useState, useEffect } from 'react';
-import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
     FileDown,
@@ -11,8 +354,7 @@ import {
     Package,
     CheckCircle,
     Smartphone,
-    Monitor,
-    Save
+    Monitor
 } from 'lucide-react';
 import useAuth from './hooks/useAuth';
 
@@ -34,10 +376,13 @@ const projectTypes = {
 const API_BASE_URL = 'https://ai.esolution.lk:2508';
 
 export default function GeneratorPage() {
+    // ------------------------------------------------------------------
+    // 🔥 CRITICAL FIX: ALL HOOKS MUST BE CALLED UNCONDITIONALLY AT THE TOP
+    // ------------------------------------------------------------------
+
     // Auth and Navigation Hooks
-    const { isLoggedIn, loading: authLoading } = useAuth();
+    const { isLoggedIn, loading: authLoading } = useAuth(); // Use 'loading' state for better handling
     const navigate = useNavigate();
-    const location = useLocation();
 
     // Context Hooks
     const { theme, isDarkMode } = useOutletContext();
@@ -48,39 +393,26 @@ export default function GeneratorPage() {
     const [projectFiles, setProjectFiles] = useState(null);
     const [projectName, setProjectName] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
-    const [isSaving, setIsSaving] = useState(false); // NEW
     const [error, setError] = useState('');
     const [activeFile, setActiveFile] = useState('');
     const [progress, setProgress] = useState({ step: '', current: 0, total: 0 });
     const [generatedFilesList, setGeneratedFilesList] = useState([]);
     const [skipFailedFiles, setSkipFailedFiles] = useState(false);
     const [skippedFiles, setSkippedFiles] = useState([]);
-    const [loadedProjectId, setLoadedProjectId] = useState(null); // NEW
 
-    // Load project from history if passed via navigation state
+    // ------------------------------------------------------------------
+    // 💡 Redirection Logic (Now inside useEffect)
+    // ------------------------------------------------------------------
     useEffect(() => {
-        if (location.state?.loadedProject) {
-            const project = location.state.loadedProject;
-            setProjectType(project.projectType);
-            setPrompt(project.prompt);
-            setProjectName(project.projectName);
-            setProjectFiles(project.files);
-            setLoadedProjectId(project.id);
-
-            const keyFile = project.projectType === 'react-native' ? 'App.jsx' : 'src/App.jsx';
-            setActiveFile(Object.keys(project.files).includes(keyFile) ? keyFile : Object.keys(project.files)[0]);
-
-            // Clear the navigation state
-            navigate(location.pathname, { replace: true, state: {} });
-        }
-    }, [location.state]);
-
-    useEffect(() => {
+        // Only attempt to redirect if authentication state is finished loading
         if (!authLoading && !isLoggedIn) {
             navigate('/signin');
         }
     }, [authLoading, isLoggedIn, navigate]);
 
+    // ------------------------------------------------------------------
+    // 🔒 Conditional Render Guard (Show loading or redirect status)
+    // ------------------------------------------------------------------
     if (authLoading || !isLoggedIn) {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -88,9 +420,11 @@ export default function GeneratorPage() {
             </div>
         );
     }
+    // ------------------------------------------------------------------
 
     // --- Helper Functions ---
 
+    // Loads JSZip (assumed to be loaded globally via <script> tag)
     const loadJSZip = () => {
         return new Promise((resolve, reject) => {
             if (window.JSZip) {
@@ -101,48 +435,7 @@ export default function GeneratorPage() {
         });
     };
 
-    // NEW: Save project to history
-    const saveProject = async () => {
-        if (!projectFiles || !projectName) {
-            alert('No project to save');
-            return;
-        }
-
-        setIsSaving(true);
-        setError('');
-
-        try {
-            const token = localStorage.getItem('jwtToken');
-            if (!token) {
-                navigate('/signin');
-                return;
-            }
-
-            const response = await axios.post(
-                `${API_BASE_URL}/projects/save`,
-                {
-                    projectName,
-                    projectType,
-                    prompt,
-                    files: projectFiles
-                },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
-            );
-
-            setLoadedProjectId(response.data.project.id);
-            alert('✅ Project saved successfully!');
-        } catch (err) {
-            console.error('Save project error:', err);
-            setError(`Failed to save project: ${err.response?.data?.error || err.message}`);
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
+    // Core function for generating project structure and content
     const generateProject = async () => {
         if (!prompt.trim()) {
             setError('Please enter a description.');
@@ -160,11 +453,11 @@ export default function GeneratorPage() {
         setProgress({ step: 'Starting...', current: 0, total: 0 });
         setGeneratedFilesList([]);
         setSkippedFiles([]);
-        setLoadedProjectId(null); // Reset loaded project ID
 
         const localFiles = {};
 
         try {
+            // --- STAGE 1: Generate Structure ---
             setProgress({ step: `Planning ${projectTypes[projectType].name} structure...`, current: 0, total: 0 });
 
             const structureResponse = await axios.post(`${API_BASE_URL}/stage1-generate-structure`, {
@@ -181,6 +474,7 @@ export default function GeneratorPage() {
             const totalFiles = filePaths.length;
             setProgress({ step: 'Generating files...', current: 0, total: totalFiles });
 
+            // --- STAGE 2: Generate Content (Iteratively) ---
             for (let i = 0; i < totalFiles; i++) {
                 const filePath = filePaths[i];
                 setProgress(prev => ({ ...prev, step: `Generating ${filePath}...`, current: i + 1 }));
@@ -228,6 +522,7 @@ export default function GeneratorPage() {
         }
     };
 
+    // Downloads all generated files as a ZIP archive
     const downloadAsZip = async () => {
         if (!projectFiles) return;
         try {
@@ -253,6 +548,7 @@ export default function GeneratorPage() {
         }
     };
 
+    // Copies the active file's content to the clipboard
     const copyToClipboard = () => {
         if (!activeFile || !projectFiles) return;
         const ta = document.createElement('textarea');
@@ -270,6 +566,7 @@ export default function GeneratorPage() {
         document.body.removeChild(ta);
     };
 
+    // Determines the appropriate icon for a file path
     const getFileIcon = (filename) => {
         if (filename.endsWith('.json')) return '📦';
         if (filename.endsWith('.md')) return '📝';
@@ -285,6 +582,7 @@ export default function GeneratorPage() {
         return '📄';
     };
 
+    // Instruction component for React Native
     const RenderNativeInstructions = () => (
         <>
             <h3 className={`font-semibold ${isDarkMode ? 'text-red-300' : 'text-red-900'} mb-3 flex items-center gap-2`}>
@@ -306,6 +604,7 @@ export default function GeneratorPage() {
         </>
     );
 
+    // Instruction component for React + Vite
     const RenderViteInstructions = () => (
         <>
             <h3 className={`font-semibold ${isDarkMode ? 'text-red-300' : 'text-red-900'} mb-3 flex items-center gap-2`}>
@@ -327,6 +626,7 @@ export default function GeneratorPage() {
         </>
     );
 
+    // --- JSX Render ---
     return (
         <>
             <div className="text-center mb-8 pt-8">
@@ -532,7 +832,7 @@ export default function GeneratorPage() {
                                         onClick={() => setActiveFile(filePath)}
                                         className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${activeFile === filePath
                                             ? `${theme.accentBg} ${theme.accentText} font-medium`
-                                            : `${theme.textMuted} ${theme.hoverBg}`
+                                            : `${theme.textMMuted} ${theme.hoverBg}`
                                             }`}
                                     >
                                         <span>{getFileIcon(filePath)}</span>
@@ -541,42 +841,13 @@ export default function GeneratorPage() {
                                 ))}
                             </div>
 
-                            <div className="mt-6 space-y-3">
-                                <button
-                                    onClick={downloadAsZip}
-                                    className={`w-full px-4 py-3 ${theme.accent} ${theme.accentHover} text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg`}
-                                >
-                                    <FileDown className="w-4 h-4" />
-                                    Download ZIP
-                                </button>
-
-                                {/* NEW: Save Project Button */}
-                                <button
-                                    onClick={saveProject}
-                                    disabled={isSaving || !!loadedProjectId}
-                                    className={`w-full px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${loadedProjectId
-                                        ? `${isDarkMode ? 'bg-green-900/30 text-green-400 border border-green-800' : 'bg-green-50 text-green-700 border border-green-200'} cursor-not-allowed`
-                                        : `${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`
-                                        } disabled:opacity-50`}
-                                >
-                                    {isSaving ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            Saving...
-                                        </>
-                                    ) : loadedProjectId ? (
-                                        <>
-                                            <CheckCircle className="w-4 h-4" />
-                                            Saved
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Save className="w-4 h-4" />
-                                            Save Project
-                                        </>
-                                    )}
-                                </button>
-                            </div>
+                            <button
+                                onClick={downloadAsZip}
+                                className={`mt-6 w-full px-4 py-3 ${theme.accent} ${theme.accentHover} text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg`}
+                            >
+                                <FileDown className="w-4 h-4" />
+                                Download ZIP
+                            </button>
                         </div>
                     </div>
 
@@ -636,7 +907,7 @@ export default function GeneratorPage() {
                             <Sparkles className={`w-6 h-6 ${theme.accentText}`} />
                         </div>
                         <h3 className={`font-bold ${theme.text} mb-2`}>AI Powered</h3>
-                        <p className={`${theme.textMuted} text-sm`}>
+                        <p className={`${theme.textMMuted} text-sm`}>
                             Uses Google's Gemini AI to generate production-ready Web & Mobile projects.
                         </p>
                     </div>
@@ -655,3 +926,169 @@ export default function GeneratorPage() {
         </>
     );
 }
+
+// src/AuthCallback.jsx
+import React, { useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+
+const AuthCallback = () => {
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = searchParams.get('token');
+
+        if (token) {
+            // 1. Store the token
+            localStorage.setItem('jwtToken', token);
+            // 2. Redirect to the generator (URL is now clean)
+            navigate('/generator', { replace: true });
+        } else {
+            // No token found, go to signin
+            navigate('/signin', { replace: true });
+        }
+    }, [searchParams, navigate]);
+
+    // You can render a loading spinner here
+    return <div>Logging you in...</div>;
+};
+
+export default AuthCallback;
+
+// src/hooks/useAuth.js
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const PROFILE_API_URL = 'https://ai.esolution.lk:2508/user/profile';
+
+const useAuth = () => {
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            // Get token from storage
+            const token = localStorage.getItem('jwtToken');
+
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const response = await axios.get(PROFILE_API_URL, {
+                    // --- SEND THE TOKEN ---
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    // withCredentials: true, // <-- REMOVE THIS
+                });
+
+                setUser(response.data.user);
+            } catch (error) {
+                // If token is invalid, 401 error will be caught here
+                setUser(null);
+                localStorage.removeItem('jwtToken'); // Clean up invalid token
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUser();
+    }, []);
+
+    return { user, loading, isLoggedIn: !!user };
+};
+
+export default useAuth;
+
+// src/components/LoginScreen.jsx
+import React, { useEffect } from 'react';
+// --- NEW: Import hooks for theme and icons ---
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import { Mail, Facebook, Github, Apple } from 'lucide-react';
+import useAuth from '../hooks/useAuth';
+
+const LoginScreen = () => {
+    // --- NEW: Get theme from the App.jsx layout ---
+    const { theme } = useOutletContext();
+
+    const { isLoggedIn } = useAuth();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (isLoggedIn) {
+            navigate('/generator');
+        }
+    }, [navigate]);
+
+    // --- MODIFIED: Use port 3001 to match your backend ---
+    const GOOGLE_AUTH_URL = 'https://ai.esolution.lk:2508/auth/google';
+
+    const handleGoogleLogin = () => {
+        window.location.href = GOOGLE_AUTH_URL;
+    };
+
+    // --- NEW: A reusable button component for social logins ---
+    const SocialButton = ({ icon, text, onClick, disabled = false }) => (
+        <button
+            onClick={onClick}
+            disabled={disabled}
+            className={`w-full flex items-center justify-center space-x-3 py-3 px-4 border rounded-lg text-lg font-medium transition duration-150 ease-in-out
+            ${disabled
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                    : `${theme.inputBg} ${theme.inputBorder} ${theme.text} hover:${theme.hoverBg}`
+                }
+            `}
+        >
+            {icon}
+            <span>{text}</span>
+        </button>
+    );
+
+    return (
+        // --- MODIFIED: Use theme styles for page background ---
+        <div className="flex justify-center items-center min-h-[80vh] py-12">
+            {/* --- MODIFIED: Use theme styles for login card --- */}
+            <div className={`p-8 ${theme.cardBg} rounded-xl shadow-2xl w-full max-w-sm text-center border ${theme.cardBorder}`}>
+                <h1 className={`text-3xl font-extrabold ${theme.text} mb-6`}>
+                    Sign In
+                </h1>
+
+                <div className="space-y-4">
+                    {/* Active Google Button */}
+                    <SocialButton
+                        icon={<Mail className="w-5 h-5" />} // Using Mail as a stand-in for Google
+                        text="Sign in with Google"
+                        onClick={handleGoogleLogin}
+                    />
+
+                    {/* --- NEW: Disabled Social Buttons --- */}
+                    <SocialButton
+                        icon={<Facebook className="w-5 h-5" />}
+                        text="Sign in with Facebook"
+                        disabled={true}
+                    />
+
+                    <SocialButton
+                        icon={<Github className="w-5 h-5" />}
+                        text="Sign in with GitHub"
+                        disabled={true}
+                    />
+
+                    <SocialButton
+                        icon={<Apple className="w-5 h-5" />}
+                        text="Sign in with Apple"
+                        disabled={true}
+                    />
+                </div>
+
+                <p className={`mt-6 text-xs ${theme.textMuted}`}>
+                    By signing in, you agree to our Terms of Service.
+                </p>
+            </div>
+        </div>
+    );
+};
+
+export default LoginScreen;

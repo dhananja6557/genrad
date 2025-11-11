@@ -1,5 +1,6 @@
+// src/App.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Sun, Sparkles, User, Settings, LifeBuoy, LogOut } from 'lucide-react';
+import { Moon, Sun, Sparkles, User, Settings, LifeBuoy, LogOut, History } from 'lucide-react';
 import { Outlet, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import useAuth from './hooks/useAuth';
 
@@ -11,7 +12,6 @@ export default function App() {
 
     const handleLogout = () => {
         localStorage.removeItem('jwtToken');
-        // Redirect to home page
         window.location.href = '/';
     };
 
@@ -60,10 +60,8 @@ export default function App() {
                 setIsMenuOpen(false);
             }
         }
-        // Bind the event listener
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
-            // Unbind the event listener on clean-up
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [menuRef]);
@@ -84,14 +82,14 @@ export default function App() {
         accentText: 'text-red-600',
         accentBg: isDarkMode ? 'bg-red-900/20' : 'bg-red-50',
         accentBorder: isDarkMode ? 'border-red-800' : 'border-red-200',
+        dropdownBg: isDarkMode ? 'bg-gray-900' : 'bg-white',
+        dropdownHoverBg: isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100',
     };
 
-    // --- NEW: Top Navigation Bar Component ---
     const TopNav = () => (
         <nav className={`sticky top-0 z-50 w-full ${isDarkMode ? 'bg-black/80' : 'bg-white/80'} backdrop-blur-md border-b ${theme.border}`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
-                    {/* Left side: Logo and Nav Links */}
                     <div className="flex items-center space-x-8">
                         <Link to="/" className="flex-shrink-0 flex items-center space-x-2">
                             <Sparkles className={`w-7 h-7 ${theme.accentText}`} />
@@ -106,7 +104,6 @@ export default function App() {
                         </div>
                     </div>
 
-                    {/* Right side: Try Button and Theme Toggle */}
                     <div className="flex items-center space-x-4">
                         {user ? (
                             <div className="relative" ref={menuRef}>
@@ -123,6 +120,16 @@ export default function App() {
                                 {/* Dropdown Menu */}
                                 {isMenuOpen && (
                                     <div className={`absolute right-0 top-full mt-2 w-48 ${theme.dropdownBg} border ${theme.border} rounded-md shadow-lg py-1 z-50`}>
+                                        {/* NEW: History Link */}
+                                        <Link
+                                            to="/history"
+                                            onClick={() => setIsMenuOpen(false)}
+                                            className={`flex items-center space-x-2 px-4 py-2 text-sm ${theme.text} ${theme.dropdownHoverBg}`}
+                                        >
+                                            <History className="w-4 h-4" />
+                                            <span>Project History</span>
+                                        </Link>
+                                        <div className={`border-t ${theme.border} my-1`}></div>
                                         <a
                                             href="#"
                                             className={`flex items-center space-x-2 px-4 py-2 text-sm ${theme.text} ${theme.dropdownHoverBg}`}
@@ -139,8 +146,8 @@ export default function App() {
                                         </a>
                                         <div className={`border-t ${theme.border} my-1`}></div>
                                         <a
-                                            onClick={handleLogout} // <-- ADD
-                                            style={{ cursor: 'pointer' }} // <-- Make it look clickable
+                                            onClick={handleLogout}
+                                            style={{ cursor: 'pointer' }}
                                             className={`flex items-center space-x-2 px-4 py-2 text-sm ${theme.text} ${theme.dropdownHoverBg}`}
                                         >
                                             <LogOut className="w-4 h-4" />
@@ -171,7 +178,6 @@ export default function App() {
             </div>
         </nav>
     );
-    // --- END NEW ---
 
     return (
         <div className={`${isDarkMode ? 'dark' : ''} ${theme.bg}`}>
