@@ -1,6 +1,6 @@
 # 🎯 GenRAD Backend - Master Index
 
-## Complete Backend Package for Your Database Schema
+## Complete Backend Package and Database Schema
 
 **Total: 20 files | 71KB | Setup time: ~15 minutes**
 
