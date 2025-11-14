@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Profile</title>
+</head>
+<body>
+    <h1>Welcome, <%= user.displayName %>!</h1>
+    <img src="<%= user.image %>" alt="Profile Picture">
+    <p>Email: <%= user.email %></p>
+    <a href="/auth/logout">Logout</a>
+</body>
+</html>
