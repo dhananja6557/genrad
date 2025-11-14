@@ -2,18 +2,40 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Moon, Sun, Sparkles, User, Settings, LifeBuoy, LogOut, History, Database } from 'lucide-react';
 import { Outlet, Link, useSearchParams, useNavigate } from 'react-router-dom';
-import useAuth from './hooks/useAuth'; // <-- Make sure this path is correct
+import useAuth from './hooks/useAuth';
 
 export default function App() {
     // Theme state
     const [isDarkMode, setIsDarkMode] = useState(false);
 
-    // --- MODIFIED: Get refetchUser from the hook ---
+    // --- Get refetchUser from the hook ---
     const { user, refetchUser } = useAuth();
+
+    // --- THIS IS THE CRITICAL FIX ---
+    useEffect(() => {
+        // This function will run when the 'auth-refresh' event is fired
+        const handleAuthRefresh = () => {
+            console.log('Auth refresh event detected in App.jsx. Refetching user...');
+            if (refetchUser) {
+                refetchUser();
+            }
+        };
+
+        // Listen for the custom event
+        window.addEventListener('auth-refresh', handleAuthRefresh);
+
+        // Clean up the listener when the component unmounts
+        return () => {
+            window.removeEventListener('auth-refresh', handleAuthRefresh);
+        };
+    }, [refetchUser]); // Dependency array ensures it uses the latest refetchUser
+    // --- END CRITICAL FIX ---
 
     const handleLogout = () => {
         localStorage.removeItem('jwtToken');
-        window.location.href = '/';
+        // Fire the same event on logout so the UI updates instantly
+        window.dispatchEvent(new Event('auth-refresh'));
+        window.location.href = '/'; // Redirect to home
     };
 
     const [searchParams, setSearchParams] = useSearchParams();
@@ -185,11 +207,11 @@ export default function App() {
                             </div>
                         ) : (
                             <Link
-                                to="/generator"
+                                to="/" // Changed to link to landing page
                                 className={`hidden sm:flex items-center space-x-1.5 text-sm font-medium ${theme.text} ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} px-3 py-1.5 rounded-full ${theme.hoverBg}`}
                             >
                                 <span className={`${theme.accentText} text-lg`}>+</span>
-                                G<span>Try GenRAD</span>
+                                <span>Try GenRAD</span>
                             </Link>
                         )}
 
@@ -210,7 +232,7 @@ export default function App() {
         <div className={`${isDarkMode ? 'dark' : ''} ${theme.bg}`}>
             <TopNav />
             <main className="min-h-screen max-w-7xl mx-auto p-6">
-                {/* --- MODIFIED: Pass refetchUser into the context --- */}
+                {/* Pass refetchUser into context so children can use it if needed */}
                 <Outlet context={{ theme, isDarkMode, refetchUser }} />
             </main>
         </div>

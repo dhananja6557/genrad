@@ -1,4 +1,3 @@
-// src/GeneratorPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -13,7 +12,7 @@ import {
     Smartphone,
     Monitor,
     Save,
-    AlertCircle 
+    AlertCircle
 } from 'lucide-react';
 import useAuth from './hooks/useAuth';
 
@@ -32,13 +31,16 @@ const projectTypes = {
 
 const API_BASE_URL = 'https://ai.esolution.lk:2508';
 
+// HELPER FUNCTION TO PREVENT RATE-LIMITING
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 export default function GeneratorPage() {
     // Auth and Navigation Hooks
     const { user, isLoggedIn, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
-    // --- MODIFIED: Get refetchUser from the context ---
+    // Get refetchUser from the context
     const { theme, isDarkMode, refetchUser } = useOutletContext();
 
     // State Hooks
@@ -47,14 +49,14 @@ export default function GeneratorPage() {
     const [projectFiles, setProjectFiles] = useState(null);
     const [projectName, setProjectName] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
-    const [isSaving, setIsSaving] = useState(false); 
+    const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
     const [activeFile, setActiveFile] = useState('');
     const [progress, setProgress] = useState({ step: '', current: 0, total: 0 });
     const [generatedFilesList, setGeneratedFilesList] = useState([]);
     const [skipFailedFiles, setSkipFailedFiles] = useState(false);
     const [skippedFiles, setSkippedFiles] = useState([]);
-    const [loadedProjectId, setLoadedProjectId] = useState(null); 
+    const [loadedProjectId, setLoadedProjectId] = useState(null);
 
     // Load project from history if passed via navigation state
     useEffect(() => {
@@ -72,18 +74,18 @@ export default function GeneratorPage() {
             // Clear the navigation state
             navigate(location.pathname, { replace: true, state: {} });
         }
-    }, [location.state]);
+    }, [location.state, navigate]);
 
     useEffect(() => {
         if (!authLoading && !isLoggedIn) {
-            navigate('/signin');
+            navigate('/'); // Redirect to landing page
         }
     }, [authLoading, isLoggedIn, navigate]);
 
     if (authLoading || !isLoggedIn) {
         return (
             <div className="flex justify-center items-center h-screen">
-                {authLoading ? 'Loading authentication status...' : 'Redirecting to login...'}
+                {authLoading ? 'Loading authentication status...' : 'Redirecting...'}
             </div>
         );
     }
@@ -112,7 +114,7 @@ export default function GeneratorPage() {
         try {
             const token = localStorage.getItem('jwtToken');
             if (!token) {
-                navigate('/signin');
+                navigate('/');
                 return;
             }
 
@@ -163,13 +165,13 @@ export default function GeneratorPage() {
         setProgress({ step: 'Starting...', current: 0, total: 0 });
         setGeneratedFilesList([]);
         setSkippedFiles([]);
-        setLoadedProjectId(null); 
+        setLoadedProjectId(null);
 
         const localFiles = {};
 
         const token = localStorage.getItem('jwtToken');
         if (!token) {
-            navigate('/signin');
+            navigate('/');
             return;
         }
         const authHeaders = { headers: { 'Authorization': `Bearer ${token}` } };
@@ -180,7 +182,7 @@ export default function GeneratorPage() {
             const structureResponse = await axios.post(`${API_BASE_URL}/stage1-generate-structure`, {
                 prompt: prompt,
                 projectType: projectType
-            }, authHeaders); 
+            }, authHeaders);
 
             const { filePaths } = structureResponse.data;
 
@@ -200,7 +202,7 @@ export default function GeneratorPage() {
                         prompt: prompt,
                         projectType: projectType,
                         filePath: filePath
-                    }, authHeaders); 
+                    }, authHeaders);
 
                     const { content } = contentResponse.data;
                     localFiles[filePath] = content;
@@ -215,6 +217,13 @@ export default function GeneratorPage() {
                         throw new Error(`Failed on file: ${filePath}. ${errorMessage}`);
                     }
                 }
+
+                // --- FIX: PAUSE TO AVOID RATE LIMIT ---
+                // Pause for 1.5s to avoid rate-limiting, unless it's the last file.
+                if (i < totalFiles - 1) {
+                    await sleep(1500);
+                }
+                // --- END OF FIX ---
             }
 
             setProgress({ step: 'Project complete!', current: totalFiles, total: totalFiles });
@@ -222,10 +231,7 @@ export default function GeneratorPage() {
             if (Object.keys(localFiles).length === 0) {
                 throw new Error('No files were successfully generated.');
             }
-            
-            // --- MODIFIED SECTION: Replaced alert and reload ---
-            
-            // 1. Set the state to show the files immediately
+
             const name = prompt.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 30);
             setProjectName(name || (projectType === 'react-native' ? 'my-rn-app' : 'my-web-app'));
             setProjectFiles(localFiles);
@@ -233,11 +239,10 @@ export default function GeneratorPage() {
             const keyFile = projectType === 'react-native' ? 'App.jsx' : 'src/App.jsx';
             setActiveFile(Object.keys(localFiles).includes(keyFile) ? keyFile : Object.keys(localFiles)[0]);
 
-            // 2. NOW, call the refetch function to update the header
+            // Call the refetch function to update the header
             if (refetchUser) {
                 await refetchUser();
             }
-            // --- END MODIFIED SECTION ---
 
         } catch (err) {
             if (err.response?.status === 403) {
@@ -350,7 +355,7 @@ export default function GeneratorPage() {
         </>
     );
 
-    const hasCredits = user ? user.credits > 0 : true; 
+    const hasCredits = user ? user.credits > 0 : true;
 
     return (
         <>
@@ -418,7 +423,7 @@ export default function GeneratorPage() {
 
                 <button
                     onClick={generateProject}
-                    disabled={isGenerating || !hasCredits} 
+                    disabled={isGenerating || !hasCredits}
                     className={`mt-4 w-full ${theme.accent} ${theme.accentHover} text-white py-4 px-6 rounded-xl font-semibold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-xl`}
                 >
                     {isGenerating ? (
@@ -426,7 +431,7 @@ export default function GeneratorPage() {
                             <Loader2 className="w-5 h-5 animate-spin" />
                             Generating Project...
                         </>
-                    ) : !hasCredits ? ( 
+                    ) : !hasCredits ? (
                         <>
                             <AlertCircle className="w-5 h-5" />
                             No Credits Remaining
@@ -524,21 +529,7 @@ export default function GeneratorPage() {
                             <AlertCircle className={`w-5 h-5 ${isDarkMode ? 'text-red-400' : 'text-red-600'} flex-shrink-0 mt-0.5`} />
                             <div className="flex-1">
                                 <h4 className={`font-semibold ${isDarkMode ? 'text-red-300' : 'text-red-900'} mb-1`}>Generation Error</h4>
-                                <p className={`text-sm ${isDarkMode ? 'text-red-400' : 'text-red-700'} mb-3`}>{error}</p>
-                                
-                                {!error.includes("credits") && (
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            onClick={generateProject}
-                                            className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors"
-                                        >
-                                            Try Again
-                                        </button>
-                                        <p className="text-xs text-red-600">
-                                            Or try: Simplifying your description
-                                        </p>
-                                    </div>
-                                )}
+                                <p className={`text-sm ${isDarkMode ? 'text-red-400' : 'text-red-700'}`}>{error}</p>
                             </div>
                         </div>
                     </div>
@@ -546,141 +537,81 @@ export default function GeneratorPage() {
             </div>
 
             {projectFiles && (
-                <div className="grid lg:grid-cols-4 gap-6">
-                    <div className="lg:col-span-1">
-                        <div className={`${theme.cardBg} rounded-2xl shadow-xl p-6 border ${theme.cardBorder} sticky top-6`}>
-                            <div className="flex items-center gap-2 mb-4">
-                                <FolderTree className={`w-5 h-5 ${theme.accentText}`} />
-                                <h2 className={`text-lg font-bold ${theme.text}`}>Project Files</h2>
-                            </div>
-
-                            <div className="space-y-1 max-h-[60vh] overflow-y-auto">
-                                <div className={`text-sm font-semibold ${theme.text} mb-2 flex items-center gap-2`}>
-                                    <Package className="w-4 h-4" />
-                                    {projectName}
+                <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6`}>
+                    <div className={`lg:col-span-1 ${theme.cardBg} rounded-2xl shadow-xl p-6 border ${theme.cardBorder}`}>
+                        <div className="flex justify-between items-center mb-4">
+                            <input
+                                type="text"
+                                value={projectName}
+                                onChange={(e) => setProjectName(e.target.value)}
+                                placeholder="Enter project name"
+                                className={`w-full p-2 border-b-2 ${theme.inputBorder} ${theme.inputBg} ${theme.text} focus:outline-none focus:border-red-500`}
+                            />
+                        </div>
+                        <div className="flex gap-2 mb-4">
+                            <button
+                                onClick={downloadAsZip}
+                                className={`w-1/2 ${theme.accent} ${theme.accentHover} text-white py-2 px-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all`}
+                            >
+                                <FileDown className="w-4 h-4" />
+                                Download ZIP
+                            </button>
+                            <button
+                                onClick={saveProject}
+                                disabled={isSaving || loadedProjectId}
+                                className={`w-1/2 ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} ${theme.text} py-2 px-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50`}
+                            >
+                                {isSaving ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : loadedProjectId ? (
+                                    <CheckCircle className="w-4 h-4" />
+                                ) : (
+                                    <Save className="w-4 h-4" />
+                                )}
+                                {loadedProjectId ? 'Saved' : 'Save'}
+                            </button>
+                        </div>
+                        <div className="max-h-96 overflow-y-auto">
+                            {Object.keys(projectFiles).map((file, index) => (
+                                <div
+                                    key={index}
+                                    onClick={() => setActiveFile(file)}
+                                    className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer text-sm truncate ${activeFile === file
+                                        ? `${theme.accentBg} ${theme.accentText} font-medium`
+                                        : `${theme.textMuted} ${theme.hoverBg}`
+                                        }`}
+                                >
+                                    <span>{getFileIcon(file)}</span>
+                                    <span className="font-mono">{file}</span>
                                 </div>
-                                {Object.keys(projectFiles).map((filePath) => (
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className={`lg:col-span-2 ${theme.cardBg} rounded-2xl shadow-xl border ${theme.cardBorder} overflow-hidden`}>
+                        {activeFile ? (
+                            <>
+                                <div className={`flex justify-between items-center p-4 border-b ${theme.border}`}>
+                                    <div className="flex items-center gap-2">
+                                        <span>{getFileIcon(activeFile)}</span>
+                                        <span className={`font-mono text-sm ${theme.text}`}>{activeFile}</span>
+                                    </div>
                                     <button
-                                        key={filePath}
-                                        onClick={() => setActiveFile(filePath)}
-                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${activeFile === filePath
-                                            ? `${theme.accentBg} ${theme.accentText} font-medium`
-                                            : `${theme.textMuted} ${theme.hoverBg}`
-                                            }`}
+                                        onClick={copyToClipboard}
+                                        className={`py-1 px-3 rounded-lg text-xs font-medium ${theme.hoverBg} ${theme.text} border ${theme.border}`}
                                     >
-                                        <span>{getFileIcon(filePath)}</span>
-                                        <span className="truncate">{filePath}</span>
+                                        Copy Code
                                     </button>
-                                ))}
-                            </div>
-
-                            <div className="mt-6 space-y-3">
-                                <button
-                                    onClick={downloadAsZip}
-                                    className={`w-full px-4 py-3 ${theme.accent} ${theme.accentHover} text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg`}
-                                >
-                                    <FileDown className="w-4 h-4" />
-                                    Download ZIP
-                                </button>
-
-                                <button
-                                    onClick={saveProject}
-                                    disabled={isSaving || !!loadedProjectId}
-                                    className={`w-full px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${loadedProjectId
-                                        ? `${isDarkMode ? 'bg-green-900/30 text-green-400 border border-green-800' : 'bg-green-50 text-green-700 border border-green-200'} cursor-not-allowed`
-                                        : `${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`
-                                        } disabled:opacity-50`}
-                                >
-                                    {isSaving ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            Saving...
-                                        </>
-                                    ) : loadedProjectId ? (
-                                        <>
-                                            <CheckCircle className="w-4 h-4" />
-                                            Saved
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Save className="w-4 h-4" />
-                                            Save Project
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="lg:col-span-3">
-                        <div className={`${theme.cardBg} rounded-2xl shadow-xl border ${theme.cardBorder}`}>
-                            <div className={`flex items-center justify-between p-6 border-b ${theme.border}`}>
-                                <div className="flex items-center gap-2 min-w-0">
-                                    <span className="text-2xl">{activeFile ? getFileIcon(activeFile) : <Code2 className="w-6 h-6 text-gray-500" />}</span>
-                                    <h3 className={`text-xl font-bold ${theme.text} truncate`}>{activeFile || 'Select a file'}</h3>
                                 </div>
-                                <button
-                                    onClick={copyToClipboard}
-                                    disabled={!projectFiles || !activeFile}
-                                    className={`px-4 py-2 ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'} rounded-lg font-medium transition-colors flex items-center gap-2 flex-shrink-0 disabled:opacity-50`}
-                                >
-                                    <Code2 className="w-4 h-4" />
-                                    Copy
-                                </button>
+                                <pre className={`p-6 text-sm overflow-auto ${isDarkMode ? 'bg-gray-900/50' : 'bg-gray-50/50'} max-h-[600px] ${theme.text}`}>
+                                    <code className="font-mono">{projectFiles[activeFile]}</code>
+                                </pre>
+                            </>
+                        ) : (
+                            <div className={`p-6 ${theme.accentBg} border-t-4 ${theme.accentBorder}`}>
+                                {projectType === 'react-native' ? <RenderNativeInstructions /> : <RenderViteInstructions />}
                             </div>
-
-                            <div className="p-6">
-                                <div className={`${isDarkMode ? 'bg-black' : 'bg-gray-900'} rounded-xl p-6 overflow-x-auto max-h-[600px] overflow-y-auto`}>
-                                    <pre className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-100'} font-mono`}>
-                                        <code>
-                                            {projectFiles && activeFile
-                                                ? projectFiles[activeFile]
-                                                : <span className={theme.textMuted}>Select a file to view its content.</span>
-                                            }
-                                        </code>
-                                    </pre>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className={`mt-6 ${theme.accentBg} border ${theme.accentBorder} rounded-xl p-6`}>
-                            {projectType === 'react-native' ? <RenderNativeInstructions /> : <RenderViteInstructions />}
-                        </div>
-
-                    </div>
-                </div>
-            )}
-
-            {!projectFiles && (
-                <div className="grid md:grid-cols-3 gap-6 mt-8">
-                    <div className={`${theme.cardBg} p-6 rounded-xl shadow-md border ${theme.cardBorder}`}>
-                        <div className={`w-12 h-12 ${theme.accentBg} rounded-lg flex items-center justify-center mb-4`}>
-                            <FolderTree className={`w-6 h-6 ${theme.accentText}`} />
-                        </div>
-                        <h3 className={`font-bold ${theme.text} mb-2`}>Complete Structure</h3>
-                        <p className={`${theme.textMuted} text-sm`}>
-                            Full project with components, screens/pages, navigation, and proper folder structure.
-                        </p>
-                    </div>
-
-                    <div className={`${theme.cardBg} p-6 rounded-xl shadow-md border ${theme.cardBorder}`}>
-                        <div className={`w-12 h-12 ${theme.accentBg} rounded-lg flex items-center justify-center mb-4`}>
-                            <Sparkles className={`w-6 h-6 ${theme.accentText}`} />
-                        </div>
-                        <h3 className={`font-bold ${theme.text} mb-2`}>AI Powered</h3>
-                        <p className={`${theme.textMuted} text-sm`}>
-                            Uses Google's Gemini AI to generate production-ready Web & Mobile projects.
-                        </p>
-                    </div>
-
-                    <div className={`${theme.cardBg} p-6 rounded-xl shadow-md border ${theme.cardBorder}`}>
-                        <div className={`w-12 h-12 ${theme.accentBg} rounded-lg flex items-center justify-center mb-4`}>
-                            <FileDown className={`w-6 h-6 ${theme.accentText}`} />
-                        </div>
-                        <h3 className={`font-bold ${theme.text} mb-2`}>ZIP Download</h3>
-                        <p className={`${theme.textMsuted} text-sm`}>
-                            Download complete project as ZIP, ready to extract and run.
-                        </p>
+                        )}
                     </div>
                 </div>
             )}
