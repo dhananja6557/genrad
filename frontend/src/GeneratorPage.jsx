@@ -359,7 +359,7 @@ export default function GeneratorPage() {
 
     return (
         <>
-            <div className="text-center mb-8 pt-8">
+            <div className="text-center mb-8 pt-8 mt-8">
                 <div className="flex items-center justify-center gap-3 mb-4">
                     <h1 className={`text-4xl font-bold ${theme.text} mb-3`}>Create your App</h1>
                 </div>
@@ -384,10 +384,10 @@ export default function GeneratorPage() {
             <div className={`${theme.cardBg} rounded-2xl shadow-xl p-8 mb-6 border ${theme.cardBorder}`}>
 
                 <div className="my-4">
-                    <label className={`flex flex-wrap gap-2 ${theme.text} mb-2 justify-end`}>
-                        Select Project Type:
+                    <label className={`flex flex-wrap gap-2 ${theme.text} mb-2 justify-center font-semibold`}>
+                        Select Project Type
                     </label>
-                    <div className="flex flex-wrap gap-2 justify-end">
+                    <div className="flex flex-wrap gap-2 justify-center">
                         {Object.keys(projectTypes).map(key => {
                             const config = projectTypes[key];
                             const isActive = projectType === key;
@@ -403,7 +403,7 @@ export default function GeneratorPage() {
                                         }`}
                                 >
                                     <Icon className="w-5 h-5" />
-                                    {config.name}
+                                    {/* {config.name} */}
                                 </button>
                             )
                         })}
