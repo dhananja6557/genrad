@@ -231,8 +231,7 @@ export default function App() {
     return (
         <div className={`${isDarkMode ? 'dark' : ''} ${theme.bg}`}>
             <TopNav />
-            <main className="min-h-screen max-w-7xl mx-auto p-6">
-                {/* Pass refetchUser into context so children can use it if needed */}
+            <main className="min-h-screen max-w-7xl mx-auto px-6 pb-6">
                 <Outlet context={{ theme, isDarkMode, refetchUser }} />
             </main>
         </div>

@@ -115,10 +115,9 @@ export default function LandingPage() {
     return (
         <div className={`min-h-screen ${theme.bg} ${theme.text}`}>
             {/* Hero Section */}
-            <div className="relative overflow-hidden">
-                {/* Background Gradient - CHANGED to red */}
-                <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-transparent to-red-500/10"></div>
-
+            <div className="relative">
+                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-screen bg-gradient-to-br from-red-500 to-red-500 opacity-10"></div>
+                
                 <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
                     <div className="text-center">
                         {/* Logo/Icon - CHANGED to red */}
@@ -385,7 +384,7 @@ export default function LandingPage() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center">
                         <p className={theme.textMuted}>
-                            Built with ❤️ using React, Node.js, and Google Gemini AI
+                            &copy; 2025 AKSD Dhananja (S23014525). All rights reserved.
                         </p>
                     </div>
                 </div>
