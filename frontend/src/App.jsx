@@ -1,79 +1,65 @@
-// src/App.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Moon, Sun, Sparkles, User, Settings, LifeBuoy, LogOut, History, Database } from 'lucide-react';
-import { Outlet, Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
 import useAuth from './hooks/useAuth';
 
 export default function App() {
-    // Theme state
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    // --- 1. MODIFIED: Initialize state from localStorage or system preference ---
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            return savedTheme === 'dark';
+        }
+        // If no saved theme, fall back to system preference
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    });
 
-    // --- Get refetchUser from the hook ---
     const { user, refetchUser } = useAuth();
+    const navigate = useNavigate();
 
-    // --- THIS IS THE CRITICAL FIX ---
+    // Event Listener for Auth Refresh
     useEffect(() => {
-        // This function will run when the 'auth-refresh' event is fired
         const handleAuthRefresh = () => {
-            console.log('Auth refresh event detected in App.jsx. Refetching user...');
             if (refetchUser) {
                 refetchUser();
             }
         };
-
-        // Listen for the custom event
         window.addEventListener('auth-refresh', handleAuthRefresh);
-
-        // Clean up the listener when the component unmounts
         return () => {
             window.removeEventListener('auth-refresh', handleAuthRefresh);
         };
-    }, [refetchUser]); // Dependency array ensures it uses the latest refetchUser
-    // --- END CRITICAL FIX ---
+    }, [refetchUser]);
 
     const handleLogout = () => {
         localStorage.removeItem('jwtToken');
-        // Fire the same event on logout so the UI updates instantly
         window.dispatchEvent(new Event('auth-refresh'));
-        window.location.href = '/'; // Redirect to home
+        // Use navigate for a "soft" navigation without page refresh
+        navigate('/');
     };
 
-    const [searchParams, setSearchParams] = useSearchParams();
-    const navigate = useNavigate();
+    // --- 2. REMOVED: The old "Check for system preference on mount" useEffect is no longer needed ---
+    // (The useState initializer above now handles this)
 
-    // Check for system preference on mount
+    // --- 3. ADDED: This useEffect runs when isDarkMode changes ---
+    // It updates the document body and saves the choice to localStorage.
     useEffect(() => {
-        const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const updateTheme = (matches) => {
-            setIsDarkMode(matches);
-            if (matches) {
-                document.body.classList.add('dark');
-            } else {
-                document.body.classList.remove('dark');
-            }
-        };
-        updateTheme(darkModeMediaQuery.matches);
+        if (isDarkMode) {
+            document.body.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.body.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    }, [isDarkMode]); // Re-runs ONLY when isDarkMode changes
 
-        const handler = (e) => updateTheme(e.matches);
-        darkModeMediaQuery.addEventListener('change', handler);
-        return () => darkModeMediaQuery.removeEventListener('change', handler);
-    }, []);
-
+    // --- 4. MODIFIED: toggleTheme is now simpler ---
     const toggleTheme = () => {
-        setIsDarkMode(prev => {
-            const newIsDark = !prev;
-            if (newIsDark) {
-                document.body.classList.add('dark');
-            } else {
-                document.body.classList.remove('dark');
-            }
-            return newIsDark;
-        });
+        // Just update the state. The useEffect above will handle the rest.
+        setIsDarkMode(prev => !prev);
     };
 
     // State to manage the dropdown menu visibility
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    // Ref to detect clicks outside the menu
     const menuRef = useRef(null);
 
     // Effect to handle clicks outside the dropdown menu
@@ -207,7 +193,7 @@ export default function App() {
                             </div>
                         ) : (
                             <Link
-                                to="/" // Changed to link to landing page
+                                to="/" // Go to landing page to sign in
                                 className={`hidden sm:flex items-center space-x-1.5 text-sm font-medium ${theme.text} ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} px-3 py-1.5 rounded-full ${theme.hoverBg}`}
                             >
                                 <span className={`${theme.accentText} text-lg`}>+</span>
@@ -231,6 +217,7 @@ export default function App() {
     return (
         <div className={`${isDarkMode ? 'dark' : ''} ${theme.bg}`}>
             <TopNav />
+            {/* Remember to remove the top padding 'pt-6' from here */}
             <main className="min-h-screen max-w-7xl mx-auto px-6 pb-6">
                 <Outlet context={{ theme, isDarkMode, refetchUser }} />
             </main>
