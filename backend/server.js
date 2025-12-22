@@ -1,4 +1,3 @@
-// server.js
 require('dotenv').config();
 const express = require('express');
 const passport = require('passport');
@@ -7,7 +6,8 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const projectRoutes = require('./routes/projectRoutes');
-const geminiController = require('./controllers/geminiController');
+// MODIFIED: Import Claude controller
+const claudeController = require('./controllers/claudeController');
 
 const { pool } = require('./config/db');
 require('./config/passport');
@@ -15,7 +15,7 @@ require('./config/passport-jwt');
 
 const app = express();
 
-const FRONTEND_URL = 'https://ai.esolution.lk';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://ai.esolution.lk';
 
 app.use(cors({
     origin: FRONTEND_URL,
@@ -31,13 +31,13 @@ app.use(passport.initialize());
 const authenticateJwt = passport.authenticate('jwt', { session: false });
 
 // --- Routes ---
-// MODIFIED: Changed route prefix from '/auth' to '/api/auth'
 app.use('/api/auth', authRoutes); 
 app.use('/user', userRoutes);
 app.use('/projects', projectRoutes);
 
-app.post('/stage1-generate-structure', authenticateJwt, geminiController.generateStructure);
-app.post('/stage2-generate-content', authenticateJwt, geminiController.generateContent);
+// MODIFIED: Use claudeController methods
+app.post('/stage1-generate-structure', authenticateJwt, claudeController.generateStructure);
+app.post('/stage2-generate-content', authenticateJwt, claudeController.generateContent);
 
 app.get('/', (req, res) => {
     res.send(`Server running. <a href="${FRONTEND_URL}">Go to Frontend</a>`);

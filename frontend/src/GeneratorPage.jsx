@@ -1,3 +1,4 @@
+// src/GeneratorPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 import useAuth from './hooks/useAuth';
 
+// --- MODIFIED PROJECT TYPES ---
 const projectTypes = {
     'react-native': {
         name: 'React Native',
@@ -23,9 +25,9 @@ const projectTypes = {
         placeholder: 'A todo list app with tabs navigation...'
     },
     'react-vite': {
-        name: 'React + Vite + Tailwind',
+        name: 'React 19 + Vite + Tailwind v4', 
         icon: Monitor,
-        placeholder: 'A personal blog with a home page and an about page...'
+        placeholder: 'A modern dashboard with a sidebar layout using React Router v7...'
     }
 };
 
@@ -218,12 +220,9 @@ export default function GeneratorPage() {
                     }
                 }
 
-                // --- FIX: PAUSE TO AVOID RATE LIMIT ---
-                // Pause for 1.5s to avoid rate-limiting, unless it's the last file.
                 if (i < totalFiles - 1) {
                     await sleep(1500);
                 }
-                // --- END OF FIX ---
             }
 
             setProgress({ step: 'Project complete!', current: totalFiles, total: totalFiles });
@@ -239,7 +238,6 @@ export default function GeneratorPage() {
             const keyFile = projectType === 'react-native' ? 'App.jsx' : 'src/App.jsx';
             setActiveFile(Object.keys(localFiles).includes(keyFile) ? keyFile : Object.keys(localFiles)[0]);
 
-            // Call the refetch function to update the header
             if (refetchUser) {
                 await refetchUser();
             }
@@ -338,7 +336,7 @@ export default function GeneratorPage() {
         <>
             <h3 className={`font-semibold ${isDarkMode ? 'text-red-300' : 'text-red-900'} mb-3 flex items-center gap-2`}>
                 <Sparkles className="w-5 h-5" />
-                How to use this project (React + Vite):
+                How to use this project (React 19 + Vite):
             </h3>
             <ol className={`list-decimal list-inside space-y-2 text-sm ${isDarkMode ? 'text-red-300' : 'text-red-800'}`}>
                 <li>Click "Download ZIP" and extract the file.</li>
@@ -349,7 +347,7 @@ export default function GeneratorPage() {
             </ol>
             <div className={`mt-4 pt-4 border-t ${theme.accentBorder}`}>
                 <p className={`text-xs ${isDarkMode ? 'text-red-400' : 'text-red-700'}`}>
-                    ✨ Project includes <strong>Vite</strong>, <strong>Tailwind CSS</strong>, and <strong>React Router</strong> setup.
+                    ✨ Project includes <strong>React 19</strong>, <strong>Tailwind CSS v4</strong>, and <strong>React Router v7</strong>.
                 </p>
             </div>
         </>
@@ -359,24 +357,24 @@ export default function GeneratorPage() {
 
     return (
         <>
-            <div className="text-center mb-8 pt-8 mt-8">
+            <div className="text-center mb-8 pt-4 md:pt-8">
                 <div className="flex items-center justify-center gap-3 mb-4">
-                    <h1 className={`text-4xl font-bold ${theme.text} mb-3`}>Create your App</h1>
+                    <h1 className={`text-3xl sm:text-4xl font-bold ${theme.text} mb-3`}>Create your App</h1>
                 </div>
 
-                <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
                     <span className={`px-3 py-1 ${theme.accentBg} ${theme.accentText} text-xs font-semibold rounded-full`}>
                         Web & Mobile
                     </span>
-                    <span className={`px-3 py-1 bg-gray-800 text-gray-300 text-xs font-semibold rounded-full`}>
+                    <span className={`px-3 py-1 ${isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-200 text-gray-700'} text-xs font-semibold rounded-full`}>
                         React Native CLI
                     </span>
-                    <span className={`px-3 py-1 bg-gray-800 text-gray-300 text-xs font-semibold rounded-full`}>
-                        React + Vite
+                    <span className={`px-3 py-1 ${isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-200 text-gray-700'} text-xs font-semibold rounded-full`}>
+                        React 19 + Vite
                     </span>
                 </div>
 
-                <p className={`${theme.textMuted} text-lg`}>
+                <p className={`${theme.textMuted} text-base sm:text-lg max-w-2xl mx-auto`}>
                     Generate a complete, runnable {projectTypes[projectType].name} project from a description.
                 </p>
             </div>
@@ -424,22 +422,22 @@ export default function GeneratorPage() {
                 <button
                     onClick={generateProject}
                     disabled={isGenerating || !hasCredits}
-                    className={`mt-4 w-full ${theme.accent} ${theme.accentHover} text-white py-4 px-6 rounded-xl font-semibold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-xl`}
+                    className={`mt-4 w-full ${theme.accent} ${theme.accentHover} text-white py-3 md:py-4 px-6 rounded-xl font-semibold text-base md:text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-xl`}
                 >
                     {isGenerating ? (
                         <>
                             <Loader2 className="w-5 h-5 animate-spin" />
-                            Generating Project...
+                            <span>Generating Project...</span>
                         </>
                     ) : !hasCredits ? (
                         <>
                             <AlertCircle className="w-5 h-5" />
-                            No Credits Remaining
+                            <span>No Credits Remaining</span>
                         </>
                     ) : (
                         <>
-                            <FolderTree className="w-5 h-5" />
-                            Generate Complete Project (1 Credit)
+                            <FolderTree className="hidden sm:block w-5 h-5" />
+                            <span>Generate Project <span className="hidden sm:inline">(1 Credit)</span></span>
                         </>
                     )}
                 </button>
@@ -454,15 +452,15 @@ export default function GeneratorPage() {
                         disabled={isGenerating}
                     />
                     <label htmlFor="skipFailedFiles" className={`text-sm ${theme.textMuted} cursor-pointer`}>
-                        Continue generating even if some files fail (experimental)
+                        Continue generating even if some files fail
                     </label>
                 </div>
 
                 {isGenerating && progress.total > 0 && (
                     <div className={`mt-4 p-4 ${theme.accentBg} border ${theme.accentBorder} rounded-xl`}>
                         <div className="flex items-center justify-between mb-2">
-                            <span className={`text-sm font-medium ${isDarkMode ? 'text-red-300' : 'text-red-900'}`}>{progress.step}</span>
-                            <span className={`text-sm font-semibold ${theme.accentText}`}>
+                            <span className={`text-sm font-medium ${isDarkMode ? 'text-red-300' : 'text-red-900'} truncate pr-2`}>{progress.step}</span>
+                            <span className={`text-sm font-semibold ${theme.accentText} flex-shrink-0`}>
                                 {progress.current} / {progress.total}
                             </span>
                         </div>
@@ -472,9 +470,6 @@ export default function GeneratorPage() {
                                 style={{ width: `${(progress.current / progress.total) * 100}%` }}
                             />
                         </div>
-                        <p className={`text-xs ${isDarkMode ? 'text-red-400' : 'text-red-700'} mt-2`}>
-                            Please wait while AI generates your project files...
-                        </p>
                     </div>
                 )}
 
@@ -517,9 +512,6 @@ export default function GeneratorPage() {
                                 </div>
                             ))}
                         </div>
-                        <p className={`text-xs ${isDarkMode ? 'text-yellow-400' : 'text-yellow-700'} mt-3`}>
-                            These files failed to generate. You can manually create them or try generating the project again.
-                        </p>
                     </div>
                 )}
 
@@ -538,7 +530,8 @@ export default function GeneratorPage() {
 
             {projectFiles && (
                 <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6`}>
-                    <div className={`lg:col-span-1 ${theme.cardBg} rounded-2xl shadow-xl p-6 border ${theme.cardBorder}`}>
+
+                    <div className={`lg:col-span-1 ${theme.cardBg} rounded-2xl shadow-xl p-4 sm:p-6 border ${theme.cardBorder}`}>
                         <div className="flex justify-between items-center mb-4">
                             <input
                                 type="text"
@@ -548,10 +541,11 @@ export default function GeneratorPage() {
                                 className={`w-full p-2 border-b-2 ${theme.inputBorder} ${theme.inputBg} ${theme.text} focus:outline-none focus:border-red-500`}
                             />
                         </div>
-                        <div className="flex gap-2 mb-4">
+
+                        <div className="flex flex-col sm:flex-row gap-2 mb-4">
                             <button
                                 onClick={downloadAsZip}
-                                className={`w-1/2 ${theme.accent} ${theme.accentHover} text-white py-2 px-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all`}
+                                className={`w-full sm:w-1/2 ${theme.accent} ${theme.accentHover} text-white py-2 px-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all`}
                             >
                                 <FileDown className="w-4 h-4" />
                                 Download ZIP
@@ -559,7 +553,7 @@ export default function GeneratorPage() {
                             <button
                                 onClick={saveProject}
                                 disabled={isSaving || loadedProjectId}
-                                className={`w-1/2 ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} ${theme.text} py-2 px-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50`}
+                                className={`w-full sm:w-1/2 ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} ${theme.text} py-2 px-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50`}
                             >
                                 {isSaving ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -571,6 +565,7 @@ export default function GeneratorPage() {
                                 {loadedProjectId ? 'Saved' : 'Save'}
                             </button>
                         </div>
+
                         <div className="max-h-96 overflow-y-auto">
                             {Object.keys(projectFiles).map((file, index) => (
                                 <div
@@ -591,24 +586,24 @@ export default function GeneratorPage() {
                     <div className={`lg:col-span-2 ${theme.cardBg} rounded-2xl shadow-xl border ${theme.cardBorder} overflow-hidden`}>
                         {activeFile ? (
                             <>
-                                <div className={`flex justify-between items-center p-4 border-b ${theme.border}`}>
-                                    <div className="flex items-center gap-2">
+                                <div className={`flex justify-between items-center p-3 sm:p-4 border-b ${theme.border}`}>
+                                    <div className="flex items-center gap-2 truncate">
                                         <span>{getFileIcon(activeFile)}</span>
-                                        <span className={`font-mono text-sm ${theme.text}`}>{activeFile}</span>
+                                        <span className={`font-mono text-sm ${theme.text} truncate`}>{activeFile}</span>
                                     </div>
                                     <button
                                         onClick={copyToClipboard}
-                                        className={`py-1 px-3 rounded-lg text-xs font-medium ${theme.hoverBg} ${theme.text} border ${theme.border}`}
+                                        className={`py-1 px-3 rounded-lg text-xs font-medium ${theme.hoverBg} ${theme.text} border ${theme.border} flex-shrink-0`}
                                     >
                                         Copy Code
                                     </button>
                                 </div>
-                                <pre className={`p-6 text-sm overflow-auto ${isDarkMode ? 'bg-gray-900/50' : 'bg-gray-50/50'} max-h-[600px] ${theme.text}`}>
+                                <pre className={`p-4 sm:p-6 text-sm overflow-auto ${isDarkMode ? 'bg-gray-900/50' : 'bg-gray-50/50'} max-h-[600px] ${theme.text}`}>
                                     <code className="font-mono">{projectFiles[activeFile]}</code>
                                 </pre>
                             </>
                         ) : (
-                            <div className={`p-6 ${theme.accentBg} border-t-4 ${theme.accentBorder}`}>
+                            <div className={`p-4 sm:p-6 ${theme.accentBg} border-t-4 ${theme.accentBorder}`}>
                                 {projectType === 'react-native' ? <RenderNativeInstructions /> : <RenderViteInstructions />}
                             </div>
                         )}

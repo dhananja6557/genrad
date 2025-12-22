@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Moon, Sun, Sparkles, User, Settings, LifeBuoy, LogOut, History, Database } from 'lucide-react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';

@@ -21,7 +21,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ai.esolution.lk:25
 export default function LandingPage() {
     const { user, isLoggedIn, loading: authLoading, refetchUser } = useAuth();
     const navigate = useNavigate();
-    // Get theme from parent, which includes the 'accent' colors
     const { theme, isDarkMode } = useOutletContext();
 
     const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -79,7 +78,8 @@ export default function LandingPage() {
         {
             icon: Zap,
             title: 'AI-Powered',
-            description: 'Powered by Google Gemini AI for intelligent code generation'
+            // MODIFIED: Updated text
+            description: 'Powered by Anthropic Claude 3.5 Sonnet for superior code generation'
         },
         {
             icon: History,
@@ -100,27 +100,25 @@ export default function LandingPage() {
 
     const benefits = [
         'Complete project structure with best practices',
-        'TypeScript support out of the box',
+        'TypeScript/JSX support out of the box',
         'Modern styling with Tailwind CSS',
         'Ready-to-run code with proper imports',
         'Commented code for easy understanding',
         'Production-ready architecture'
     ];
 
-    // Use accent colors from the theme object for consistency
-    const accentTextClass = theme.accentText; // 'text-red-600'
-    const accentBorderClass = theme.accentBorder; // 'border-red-800' or 'border-red-200'
-    const accentBgClass = theme.accentBg; // 'bg-red-900/20' or 'bg-red-50'
+    const accentTextClass = theme.accentText;
+    const accentBorderClass = theme.accentBorder;
+    const accentBgClass = theme.accentBg;
 
     return (
         <div className={`min-h-screen ${theme.bg} ${theme.text}`}>
             {/* Hero Section */}
             <div className="relative">
                 <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-screen bg-gradient-to-br from-red-500 to-red-500 opacity-10"></div>
-                
+
                 <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
                     <div className="text-center">
-                        {/* Logo/Icon - CHANGED to red */}
                         <div className="flex justify-center mb-8">
                             <div className={`p-4 rounded-2xl ${accentBgClass} 
                                 backdrop-blur-sm border ${accentBorderClass}`}>
@@ -132,7 +130,6 @@ export default function LandingPage() {
                             </div>
                         </div>
 
-                        {/* Main Heading - CHANGED to red */}
                         <h1 className={`text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 ${theme.text}`}>
                             Build Projects with
                             <span className="block bg-gradient-to-r from-red-600 to-red-400 bg-clip-text text-transparent">
@@ -140,15 +137,13 @@ export default function LandingPage() {
                             </span>
                         </h1>
 
-                        {/* Subheading */}
                         <p className={`text-xl sm:text-2xl ${theme.textMuted} max-w-3xl mx-auto mb-12`}>
                             Generate complete React Native or React + Vite projects instantly.
-                            Just describe what you want to build, and let AI do the rest.
+                            Just describe what you want to build, and let Claude AI do the rest.
                         </p>
 
                         {/* Login Section */}
                         <div className="flex flex-col items-center gap-6">
-                            {/* Google Login Button */}
                             {(!isLoggingIn && !isLoggedIn) ? (
                                 <div className={`${theme.cardBg} p-8 rounded-2xl border ${theme.cardBorder} shadow-lg`}>
                                     <p className={`text-lg mb-4 ${theme.text} font-medium`}>
@@ -175,7 +170,6 @@ export default function LandingPage() {
                                 </div>
                             )}
 
-                            {/* Error Message (already red) */}
                             {loginError && (
                                 <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-red-900/20 border border-red-800' : 'bg-red-50 border border-red-200'}`}>
                                     <p className="text-red-500 text-sm">{loginError}</p>
@@ -202,7 +196,7 @@ export default function LandingPage() {
                 </div>
             </div>
 
-            {/* Features Section - CHANGED to red */}
+            {/* Features Section */}
             <div className={`py-20 ${isDarkMode ? 'bg-gray-900/50' : 'bg-gray-50'}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
@@ -240,7 +234,7 @@ export default function LandingPage() {
                 </div>
             </div>
 
-            {/* How It Works Section - CHANGED to red */}
+            {/* How It Works Section */}
             <div className="py-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
@@ -262,7 +256,7 @@ export default function LandingPage() {
                             {
                                 step: '2',
                                 title: 'AI Generates Code',
-                                description: 'Our AI creates a complete project structure for you'
+                                description: 'Claude AI creates a complete project structure for you'
                             },
                             {
                                 step: '3',
@@ -271,7 +265,6 @@ export default function LandingPage() {
                             }
                         ].map((item, index) => (
                             <div key={index} className="relative">
-                                {/* Connector Line */}
                                 {index < 2 && (
                                     <div className={`hidden md:block absolute top-12 left-1/2 w-full h-0.5 
                                         ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
@@ -331,18 +324,18 @@ export default function LandingPage() {
                                     </div>
                                     <pre className={`text-xs ${theme.text} overflow-x-auto`}>
                                         {`{
-  "projectName": "todo-app",
-  "src": [
-    {
-      "name": "App.tsx",
-      "content": "// Complete app..."
-    },
-    {
-      "name":"screens/Home.tsx",
-      "content": "// Home screen..."
-    }
-  ]
-}`}
+                                        "projectName": "todo-app",
+                                        "src": [
+                                            {
+                                            "name": "App.tsx",
+                                            "content": "// Complete app..."
+                                            },
+                                            {
+                                            "name":"screens/Home.tsx",
+                                            "content": "// Home screen..."
+                                            }
+                                        ]
+                                        }`}
                                     </pre>
                                 </div>
                                 <p className={`text-sm ${theme.textMuted}`}>
