@@ -1076,13 +1076,7 @@ When reporting bugs, please include:
 
 ## 📈 Roadmap
 
-### Version 1.1 (Q1 2025)
-- [ ] Add Vue.js and Angular project support
-- [ ] Implement automatic test generation
-- [ ] Add backend API generation capability
-- [ ] Introduce collaborative features
-
-### Version 2.0 (Q2 2025)
+### Version 2.0 (Q2 2026)
 - [ ] Integrate deployment automation
 - [ ] Add CI/CD pipeline generation
 - [ ] Implement code refinement interface
@@ -1101,8 +1095,6 @@ When reporting bugs, please include:
 ---
 
 <div align="center">
-
-**Made with ❤️ for the developer community**
 
 ⭐ Star this repo if you find it helpful!
 
