@@ -120,7 +120,7 @@
 
 ### For Windows IIS Deployment
 
-- **Windows Server**: 2016, 2019, or 2022
+- **Windows Server**: 2016, 2019, 2022 or 2025
 - **IIS**: Version 10.0 or higher
 - **URL Rewrite Module**: v2.1 ([Download](https://www.iis.net/downloads/microsoft/url-rewrite))
 - **iisnode**: Latest version ([Download](https://github.com/Azure/iisnode/releases))
