@@ -4,7 +4,6 @@
 
 ![GenRAD Logo](https://img.shields.io/badge/GenRAD-AI%20Code%20Generator-red?style=for-the-badge)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge)
-![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
 
 **Transform natural language into complete, production-ready applications**
 
