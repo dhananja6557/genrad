@@ -1043,21 +1043,6 @@ We welcome contributions! Please follow these guidelines:
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-### MIT License Summary
-
-- ✅ Commercial use
-- ✅ Modification
-- ✅ Distribution
-- ✅ Private use
-- ❌ Liability
-- ❌ Warranty
-
----
-
 ## 👥 Support
 
 ### Getting Help
