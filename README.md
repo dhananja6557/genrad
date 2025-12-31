@@ -202,10 +202,10 @@ VITE_GOOGLE_CLIENT_ID=google_client_id.apps.googleusercontent.com
 mysql -u root -p
 
 # Create database
-CREATE DATABASE genrad_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS gen_rad_user_management;
 
 # Import schema (if you have a SQL file)
-mysql -u root -p genrad_db < database/schema.sql
+mysql -u root -p gen_rad_user_management < database/schema.sql
 
 # Or run the schema from the provided SQL in the codebase
 ```
