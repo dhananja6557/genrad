@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Moon, Sun, Sparkles, User, Settings, LifeBuoy, LogOut, History, Database } from 'lucide-react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import useAuth from './hooks/useAuth';
+import genredLogo from '/genrad.png';
 
 export default function App() {
     // --- 1. MODIFIED: Initialize state from localStorage or system preference ---
@@ -102,7 +103,11 @@ export default function App() {
                 <div className="flex justify-between items-center h-16">
                     <div className="flex items-center space-x-8">
                         <Link to="/" className="flex-shrink-0 flex items-center space-x-2">
-                            <Sparkles className={`w-7 h-7 ${theme.accentText}`} />
+                            <img
+                                src={genredLogo}
+                                alt="GenRAD Logo"
+                                className="w-7 h-7 object-contain"
+                            />
                             <span className={`font-bold text-xl ${theme.text}`}>GenRAD</span>
                         </Link>
                         <div className="hidden sm:flex sm:space-x-6">

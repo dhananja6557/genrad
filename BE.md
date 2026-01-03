@@ -37,7 +37,8 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const projectRoutes = require('./routes/projectRoutes');
-const geminiController = require('./controllers/geminiController');
+// MODIFIED: Import Claude controller
+const claudeController = require('./controllers/claudeController');
 
 const { pool } = require('./config/db');
 require('./config/passport');
@@ -45,7 +46,7 @@ require('./config/passport-jwt');
 
 const app = express();
 
-const FRONTEND_URL = 'https://ai.esolution.lk';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://ai.esolution.lk';
 
 app.use(cors({
     origin: FRONTEND_URL,
@@ -61,13 +62,13 @@ app.use(passport.initialize());
 const authenticateJwt = passport.authenticate('jwt', { session: false });
 
 // --- Routes ---
-// MODIFIED: Changed route prefix from '/auth' to '/api/auth'
 app.use('/api/auth', authRoutes); 
 app.use('/user', userRoutes);
 app.use('/projects', projectRoutes);
 
-app.post('/stage1-generate-structure', authenticateJwt, geminiController.generateStructure);
-app.post('/stage2-generate-content', authenticateJwt, geminiController.generateContent);
+// MODIFIED: Use claudeController methods
+app.post('/stage1-generate-structure', authenticateJwt, claudeController.generateStructure);
+app.post('/stage2-generate-content', authenticateJwt, claudeController.generateContent);
 
 app.get('/', (req, res) => {
     res.send(`Server running. <a href="${FRONTEND_URL}">Go to Frontend</a>`);
@@ -239,79 +240,55 @@ exports.deleteProject = async (req, res) => {
     }
 };
 
-// controllers/geminiController.js
-const fetchModule = require('node-fetch');
-const fetch = fetchModule.default || fetchModule;
+// controller/claudeController.js
+const Anthropic = require('@anthropic-ai/sdk');
 const User = require('../models/User'); 
 
-// NOTE: The API key is now loaded from environment variables
-const API_KEY = process.env.GEMINI_API_KEY;
+// 1. SAFE INITIALIZATION
+// Check if key exists to prevent crashing immediately
+const apiKey = process.env.ANTHROPIC_API_KEY;
+if (!apiKey) {
+    console.error("FATAL ERROR: ANTHROPIC_API_KEY is missing in .env file");
+}
 
-// Project configuration moved here
-const promptConfig = {
-    'react-native': {
-        name: 'React Native',
-        icon: '📱',
-        structureExample: ["App.jsx", "package.json", "src/screens/HomeScreen.jsx"],
-        structurePrompt: `List files for a React Native CLI project. Must include routing.`,
-        contentRequirements: `- Use .jsx and functional components. - Implement React Navigation.`,
-        packageJsonHint: `- Valid JSON with dependencies.`
-    },
-    'react-vite': {
-        name: 'React + Vite + Tailwind',
-        icon: '🖥️',
-        structureExample: ["index.html", "package.json", "src/App.jsx"],
-        structurePrompt: `List files for a React + Vite + Tailwind CSS project. Must include routing.`,
-        contentRequirements: `- Use .jsx and functional components. - Implement React Router (v7+).`,
-        packageJsonHint: `- Valid JSON with dependencies.`
+const anthropic = new Anthropic({
+    apiKey: apiKey || 'dummy_key_to_prevent_init_crash', 
+});
+
+const CLAUDE_MODEL = 'claude-sonnet-4-5-20250929';
+
+// Helper: Extract JSON array from text (fixes "chatty" AI responses)
+const extractJsonArray = (text) => {
+    try {
+        // Find the first '[' and the last ']'
+        const start = text.indexOf('[');
+        const end = text.lastIndexOf(']');
+        
+        if (start === -1 || end === -1 || start > end) {
+            return null; // No array found
+        }
+        
+        const jsonStr = text.substring(start, end + 1);
+        return JSON.parse(jsonStr);
+    } catch (e) {
+        return null;
     }
 };
 
-// Helper function to call the Gemini API
-const callGemini = async (payload) => {
-    if (!API_KEY) {
-        throw new Error("Gemini API Key is missing. Check your .env file.");
-    }
-
-    const GEMINI_MODEL = 'gemini-2.5-flash';
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`;
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes timeout
-
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Gemini API Error:', errorData);
-            throw new Error(errorData.error?.message || `API returned status ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-            if (data.promptFeedback?.blockReason) {
-                throw new Error(`Content blocked by API: ${data.promptFeedback.blockReason}`);
-            }
-            throw new Error('Invalid response structure (no candidates or content)');
-        }
-
-        return data.candidates[0].content.parts[0].text;
-
-    } catch (err) {
-        clearTimeout(timeoutId);
-        if (err.name === 'AbortError') {
-            throw new Error('Gemini request timed out after 5 minutes.');
-        }
-        throw err;
+const promptConfig = {
+    'react-native': {
+        name: 'React Native',
+        structureExample: ["App.jsx", "package.json", "src/screens/HomeScreen.jsx"],
+        structurePrompt: `List files for a React Native CLI project. Must include routing (React Navigation).`,
+        contentRequirements: `- Use .jsx and functional components.\n- Implement React Navigation.\n- Use StyleSheet for styling.`,
+        packageJsonHint: `- Valid JSON with dependencies for react-native and navigation.`
+    },
+    'react-vite': {
+        name: 'React + Vite + Tailwind',
+        structureExample: ["index.html", "package.json", "src/App.jsx"],
+        structurePrompt: `List files for a React + Vite + Tailwind CSS project. Must include routing.`,
+        contentRequirements: `- Use .jsx and functional components.\n- Implement React Router (v7+).\n- Use Tailwind CSS classes.`,
+        packageJsonHint: `- Valid JSON with dependencies.`
     }
 };
 
@@ -320,10 +297,14 @@ const callGemini = async (payload) => {
  */
 exports.generateStructure = async (req, res) => {
     const { prompt, projectType } = req.body;
-    const userId = req.user.id; // <-- Get user ID from JWT middleware
+    const userId = req.user.id; 
 
     if (!prompt || !projectType) {
         return res.status(400).json({ error: 'Missing prompt or projectType' });
+    }
+
+    if (!apiKey) {
+        return res.status(500).json({ error: 'Server configuration error: ANTHROPIC_API_KEY is missing.' });
     }
 
     const config = promptConfig[projectType];
@@ -332,43 +313,57 @@ exports.generateStructure = async (req, res) => {
     }
 
     try {
-        // --- CREDIT CHECK & DEDUCTION ---
-        // 1. Check for resets and get latest user data
+        // --- CREDIT CHECK ---
         const user = await User.checkAndResetCredits(userId);
         if (user.credits <= 0) {
-            return res.status(403).json({ error: 'You have no project generation credits remaining. Your credits will reset on the 1st of next month.' });
+            return res.status(403).json({ error: 'You have no project generation credits remaining.' });
         }
 
-        // 2. Deduct credit (this is a transaction)
-        // We do this *before* the API call. This is the "cost" of starting a generation.
         await User.deductCredit(userId, prompt);
         // --- END CREDIT LOGIC ---
 
-        const payload = {
-            contents: [{
-                parts: [{
-                    text: `Based on: "${prompt}"\n\n${config.structurePrompt}\n\nRespond with ONLY a JSON array of file paths. Example:\n${JSON.stringify(config.structureExample)}`
-                }]
-            }]
-        };
+        const systemPrompt = `You are a senior software architect.
+        Task: Return a JSON Array of file paths for a ${config.name} project.
+        User Description: "${prompt}"
+        
+        RULES:
+        1. Return ONLY the JSON array.
+        2. No markdown, no explanations.
+        3. Example: ${JSON.stringify(config.structureExample)}`;
 
-        const responseText = await callGemini(payload);
-        const filePathsText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        const filePaths = JSON.parse(filePathsText);
+        console.log(`[Stage 1] Calling Claude for structure: ${projectType}`);
+
+        const message = await anthropic.messages.create({
+            model: CLAUDE_MODEL,
+            max_tokens: 1024,
+            system: systemPrompt,
+            messages: [
+                { role: "user", content: "Generate file list." }
+            ]
+        });
+
+        const responseText = message.content[0].text;
+        console.log(`[Stage 1] Raw Response: ${responseText.substring(0, 100)}...`);
+
+        // Use robust extraction
+        const filePaths = extractJsonArray(responseText);
 
         if (!Array.isArray(filePaths) || filePaths.length === 0) {
-            throw new Error('Could not determine project structure.');
+            console.error('[Stage 1] Failed to parse JSON:', responseText);
+            throw new Error('AI returned invalid JSON format. Please try again.');
         }
 
         res.json({ filePaths });
 
     } catch (err) {
-        console.error('Stage 1 Error:', err);
-        // Check for our specific credit error
-        if (err.message.includes('No project generation credits')) {
-            return res.status(403).json({ error: err.message });
+        console.error('Stage 1 Fatal Error:', err);
+        // Safely extract error message
+        const errorMessage = err.message || 'Unknown server error';
+        
+        if (errorMessage.includes('credit')) {
+            return res.status(403).json({ error: errorMessage });
         }
-        res.status(500).json({ error: err.message || 'Failed to generate project structure.' });
+        res.status(500).json({ error: `Generation failed: ${errorMessage}` });
     }
 };
 
@@ -391,46 +386,57 @@ exports.generateContent = async (req, res) => {
     let retries = 2;
     let lastError = null;
 
+    const systemPrompt = `You are an expert ${config.name} developer.
+    Task: Generate code for "${filePath}".
+    Context: "${prompt}"
+    
+    Requirements:
+    ${config.contentRequirements}
+    ${filePath.includes('package.json') ? config.packageJsonHint : ''}
+    
+    Output: ONLY raw code. No markdown blocks.`;
+
     while (retries > 0 && !content) {
         try {
-            const payload = {
-                contents: [{
-                    parts: [{
-                        text: `Generate ${filePath} for: "${prompt}"\n\nProject Type: ${config.name}\n\nRequirements:\n${config.contentRequirements}\n${filePath.includes('package.json') ? config.packageJsonHint : ''}\n- For ${filePath}, generate complete, runnable, production-ready code.\n\nONLY file content. No markdown, no backticks, no explanations.`
-                    }]
-                }]
-            };
+            console.log(`[Stage 2] Generating ${filePath}...`);
+            
+            const message = await anthropic.messages.create({
+                model: CLAUDE_MODEL,
+                max_tokens: 4096,
+                system: systemPrompt,
+                messages: [
+                    { role: "user", content: "Generate code." }
+                ]
+            });
 
-            let generatedText = await callGemini(payload);
+            let generatedText = message.content[0].text;
+            
+            // Clean markdown blocks if present
             generatedText = generatedText.replace(/```[a-z]*\n?/g, '').replace(/```\n?/g, '').trim();
 
-            if (generatedText.length < 10) {
-                throw new Error('Generated content too short');
+            if (generatedText.length < 5) {
+                throw new Error('Content too short');
             }
 
-            // Add Tailwind CSS directives if missing for index.css
             if (filePath === 'src/index.css' && !generatedText.includes('@tailwind')) {
-                generatedText = `@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\n/* Custom styles below */\n${generatedText}`;
+                generatedText = `@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\n${generatedText}`;
             }
 
-            content = generatedText; // Success
+            content = generatedText;
 
         } catch (err) {
             lastError = err;
             retries--;
-            if (retries > 0) {
-                console.log(`Retrying ${filePath}... (${retries} attempts left)`);
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
+            console.error(`[Stage 2] Error on ${filePath}:`, err.message);
+            if (retries > 0) await new Promise(r => setTimeout(r, 1000));
         }
     }
 
     if (content) {
         res.json({ filePath, content });
     } else {
-        console.error(`Failed to generate ${filePath} after all retries:`, lastError);
         res.status(500).json({
-            error: `Failed to generate file: ${filePath}. ${lastError.message}`,
+            error: `Failed to generate file: ${filePath}.`,
             filePath: filePath
         });
     }
