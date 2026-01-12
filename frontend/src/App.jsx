@@ -112,7 +112,7 @@ export default function App() {
                         </Link>
                         <div className="hidden sm:flex sm:space-x-6">
                             {['Products', 'Build', 'Research', 'Responsibility'].map((item) => (
-                                <a key={item} href="#" className={`text-sm font-medium ${theme.textMuted} hover:${isDarkMode ? 'text-white' : 'text-black'}`}>
+                                <a key={item} href={item.toLowerCase()} className={`text-sm font-medium ${theme.textMuted} hover:${isDarkMode ? 'text-white' : 'text-black'}`}>
                                     {item}
                                 </a>
                             ))}

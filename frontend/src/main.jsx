@@ -10,6 +10,10 @@ import './index.css';
 import LandingPage from './LandingPage.jsx'; // <-- RENAMED
 import GeneratorPage from './GeneratorPage.jsx';
 import ProjectHistoryPage from './ProjectHistoryPage.jsx';
+import ResearchPage from './ResearchPage.jsx';
+import ResponsibilityPage from './ResponsibilityPage.jsx';
+import ProductsPage from './ProductsPage.jsx';
+import BuildPage from './BuildPage.jsx';
 
 // REMOVED: LoginScreen and AuthCallback are no longer needed
 // import LoginScreen from './components/LoginScreen.jsx';
@@ -40,17 +44,22 @@ const router = createBrowserRouter([
                 path: "history",
                 element: <ProjectHistoryPage />
             },
-            // REMOVED: These routes are obsolete
-            /*
             {
-                path: "signin",
-                element: <LoginScreen />
+                path: "research",
+                element: <ResearchPage />
             },
             { 
-                path: "auth/callback", 
-                element: <AuthCallback /> 
+                path: "responsibility", 
+                element: <ResponsibilityPage /> 
+            },
+            {
+                path: "products",
+                element: <ProductsPage />
+            },
+            {
+                path: "build",
+                element: <BuildPage />
             }
-            */
         ]
     }
 ]);
